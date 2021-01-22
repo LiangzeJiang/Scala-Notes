@@ -25,11 +25,12 @@
      "Hello".intersect("world")  // "lo"
      ```
 
-3.  Arithmetic and Operator Overloading: Operators are actually methods.
+3. Arithmetic and Operator Overloading: Operators are actually methods.
 
    ```scala
    a + b // a.+(b)
    1 to 10 // 1.to(10)
+   10 to 1// empty range
    counter+=1 // no ++
    ```
 
@@ -151,17 +152,171 @@ println(s"Hello, ${name}! Next year, you will be ${age + 1}.")
 
 #### 2.5 & 2.6 Loops and Advanced For Loops
 
+`While` loops like Java and C++.
+
+```scala
+while (n > 0) {
+    r = r * n
+    n -= 1
+}
+```
+
+for loops:
+
+```scala
+val s = "Hello"
+var sum = 0
+for (i <- 0 to s.length - 1)
+	sum += s(i)
+// or
+for (ch <- "Hello") sum += ch
+```
+
+- In Scala, loops are not used as often as in other languages. As you will see in Chapter 12, you can often process the values in a sequence by applying a function to all of them, which can be done with a single method call.
+- In Scala, there is no `break` or `continue` . We can use a Boolean variable, a nested functions to return from the middle of a function or use `break` method in `scala.util.control.Breaks._` 
+
+Advanced for Loops
+
+```scala
+for (i <- 1 to 3; j <- 1 to 3) print(f"${10 * i + j}%3d") // 11 12 13 21 22 23 31 32 33
+for (i <- 1 to 3; j <- 1 to 3 if i != j) print(f"${10 * i + j}%3d") // 12 13 21 23 31 32
+for (i <- 1 to 3; from = 4 - i; j <- from to 3) print(f"${10 * i + j}%3d")
+// 13 22 23 31 32 33
+for (i <- 1 to 10) yield i % 3 // Vector(1, 2, 0, 1, 2, 0, 1, 2, 0, 1)
+```
+
 #### 2.7 Functions
+
+Scala has functions in addition to methods. A method operates on an object, but a function doesn’t. C++ has functions as well, but in Java, you have to imitate them with static methods.
+
+The Scala compiler determines the return type from the type of the expression to the right of the = symbol.
+
+1.  A very simple absolute value function:
+
+   ```scala
+   def abs(x: Double) = if (x >= 0) x else -x
+   ```
+
+2.  Function with more than one expression
+
+   ```scala
+   def fac(n: Int) = {
+       var r = 1
+       for (i <- 1 to n) r = r * i
+       r
+   } // The last expression of the block becomes the value that the function returns
+   ```
+
+3. A recursive function must have the return type specified.
+
+   ```scala
+   def fac(n: Int): Int = if (n<=0) 1 else n * fac(n - 1)
+   ```
+
+   
 
 #### 2.8 & 2.9 Default and Named Arguments / Variable Arguments
 
+The named arguments should come first.
+
+```scala
+def decorate(str: String, left: String = "[", right: String = "]") =
+ left + str + right
+
+decorate("Hello") // "[Hello]"
+decorate("Hello", "<<<", ">>>") "<<<Hello>>>"
+decorate(left = "<<<", str = "Hello", right = ">>>") // need not to be in the same order.
+```
+
+Example of variable arguments:
+
+```SCALA
+def sum(args: Int*) = {
+    var result = 0
+    for (arg <- args) result += arg
+    result
+}
+
+val s = sum(1, 4, 9, 16, 25)
+val s = sum(1 to 5) // not correct, cannot pass a range
+
+
+def recursiveSum(args: Int*) : Int = {
+ if (args.length == 0) 0
+ else args.head + recursiveSum(args.tail : _*)
+}
+val s = sum(1 to 5: _*) // consider 1 to 5 as an argument sequence
+```
+
 #### 2.10 Procedures
+
+Scala has a special notation for a function that returns no value. If the function body is enclosed in braces without a preceding = symbol, then the return type is Unit. Such a function is called a procedure. A procedure returns no value, and you only call it for its side effect.
+
+```scala
+def box(s : String) { // Look carefully: no =
+ val border = "-" * (s.length + 2)
+ print(f"$border%n|$s|%n$border%n")
+} 
+// omit the '=' or use "Unit"
+def box(s : String): Unit = {
+ ...
+} 
+-------
+|Hello|
+-------
+```
 
 #### 2.11 Lazy Values
 
+When a val is declared as lazy, its initialization is deferred until it is accessed for the first time.
+
+```scala
+lazy val words = scala.io.Source.fromFile("/usr/share/dict/words").mkString
+```
+
+If we never accesses `words` , then the file is never opened.
+
+Lazy values are useful to delay costly initialization statements. They can also deal with other initialization issues, such as circular dependencies. Moreover, they are essential for developing lazy data structures
+
 #### 2.12 Exceptions
 
+Scala exceptions work the same way as in Java or C++. When you throw an exception, for example:
 
+```scala
+throw new IllegalArgumentException("x should not be negative")
+```
 
+However, unlike Java, Scala has no “checked” exceptions—you never have to declare that a function or method might throw an exception.
 
+...skip for now.
+
+#### 2.13 Tips from exercises
+
+1. ```scala
+   def signum(n: Int): Int = {if (n > 0) 1 else if (n < 0) -1 else 0}
+   ```
+
+4. ```scala
+   for (i <- 10.to(0,-1)) println(i)
+   ```
+
+   
+
+### Chapter 3 Working with Arrays
+
+#### 3.1 Fixed-Length Arrays
+
+#### 3.2 Variable-Length Arrays: Array Buffers
+
+#### 3.3 Traversing Arrays and Array Buffers
+
+#### 3.4 Transforming Arrays
+
+#### 3.5 Common Alogrithm
+
+#### 3.6 Deciphering Scaladoc
+
+#### 3.7 Multidimensional Arrays
+
+#### 3.8 Interoperating with Java
 
