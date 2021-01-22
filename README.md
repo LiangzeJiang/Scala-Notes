@@ -1,8 +1,8 @@
-## Scala Notes  
+# Scala Notes  
 
-### From Scala for the Impatient
+## From Scala for the Impatient
 
-#### Chapter 1 The Basics
+### Chapter 1 The Basics
 
 ---
 
@@ -62,9 +62,9 @@
      10 max 2 // 10
      ```
 
-#### Chapter 2 Control Structures and functions
+### Chapter 2 Control Structures and functions
 
-##### 2.1 Conditional Expressions
+#### 2.1 Conditional Expressions
 
 In Scala, an if/else has a value, namely the value of the expression that follows the if or else.
 
@@ -86,7 +86,7 @@ if (x > 0) 1
 if (x > 0) 1 else ()
 ```
 
-##### 2.2 Statement Termination
+#### 2.2 Statement Termination
 
 In scala, a semicolon is never required if it falls just before the end of the line.  However, if you want to have more than one statement on a single line, you need to separate them with semicolons. 
 
@@ -108,7 +108,7 @@ if (n > 0) {
 
 We can also use the semicolons, they do no harm.
 
-##### 2.3 Block Expressions and Assignments
+#### 2.3 Block Expressions and Assignments
 
 In Scala, a { } block contains a sequence of expressions, and the result is also an expression. The value of the block is the value of the last expression.
 
@@ -123,7 +123,7 @@ An assignment has no value, or, strictly speaking, they have a value of type Uni
 x = y = 1 // No
 ```
 
-##### 2.4 Input and Output
+#### 2.4 Input and Output
 
 To print a value, use the `print` or `println` function. The latter adds a newline character after the printout.
 
@@ -149,17 +149,17 @@ val age = StdIn.readInt()
 println(s"Hello, ${name}! Next year, you will be ${age + 1}.")
 ```
 
-##### 2.5 & 2.6 Loops and Advanced For Loops
+#### 2.5 & 2.6 Loops and Advanced For Loops
 
-##### 2.7 Functions
+#### 2.7 Functions
 
-##### 2.8 & 2.9 Default and Named Arguments / Variable Arguments
+#### 2.8 & 2.9 Default and Named Arguments / Variable Arguments
 
-##### 2.10 Procedures
+#### 2.10 Procedures
 
-##### 2.11 Lazy Values
+#### 2.11 Lazy Values
 
-##### 2.12 Exceptions
+#### 2.12 Exceptions
 
 
 
