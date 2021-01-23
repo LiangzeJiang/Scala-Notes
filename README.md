@@ -9,7 +9,7 @@
 1. Declaring Values and Variables: 
 
    - declare a constant: `val answer = 8*5`
-   - declare a variable whose contens can vary: `var counter = 0`
+   - declare a variable whose contents can vary: `var counter = 0`
    - specify the type if necessary:  `val greeting: String = null`  
    - multiple values: `val xmax, ymax = 100`
 
@@ -300,23 +300,145 @@ However, unlike Java, Scala has no “checked” exceptions—you never have to 
    for (i <- 10.to(0,-1)) println(i)
    ```
 
-   
-
 ### Chapter 3 Working with Arrays
 
 #### 3.1 Fixed-Length Arrays
 
+An array whose length does not change, use `Array` type in Scala.
+
+```SCALA
+val nums = new Array[Int](10) // An array of ten integers, all initialized with zero
+val a = new Array[String](10) // A string array with ten elements, initialized with null
+// When we supply initial values, we don't need to specify the type, because the type can be inferred, and we also don't use 'new'
+val s = Array("Hello","World") 
+s(0) = "Goodbye" // Use () to access the elements
+```
+
 #### 3.2 Variable-Length Arrays: Array Buffers
+
+An array whose length can change, use `ArrayBuffer` type in Scala.
+
+```scala
+import scala.collection.mutable.ArrayBuffer
+
+val b = ArrayBuffer[Int]() // An empty array buffer
+val b = new ArrayBuffer[Int] // An empty array buffer
+b += 1 // Add an element at the end by +=
+b += (1, 2, 3, 5) // Add multiple elements at the end by += (...)
+b ++= Array(8, 13, 21) // Append any collection with ++= operator
+b.trimEnd(5) // Remove the last five elements, efficient
+
+// Insert and remove at an arbitrary location is not efficient
+b.insert(2, 6) // Insert 6 before index 2
+b.insert(2, 7, 8, 9) // Insert 7,8,9 before index 2
+b.remove(2) // Remove the element at index 2
+b.remove(2, 3) // Remove 3 elements starting from index 2
+
+// The conversion between Array and ArrayBuffer:
+b.toArray
+a.toBuffer
+```
 
 #### 3.3 Traversing Arrays and Array Buffers
 
+To traverse an array or array buffer with a `for` loop:
+
+```scala
+for (i <- 0 until a.length)
+	println(s"$i: ${a(i)}")
+// The 'until' method is similar to the 'to' method, except that it excludes the last value.
+for (i <- 0 to a.length - 1)
+	println(s"$i: ${a(i)}")
+
+// Others
+for (i <- 0 until a.length by 2) // Range(0, 2, 4, ...)
+	println(s"$i: ${a(i)}")
+
+for (i <- 0 until a.length by -1) // Range(..., 2, 1, 0)
+	println(s"$i: ${a(i)}")
+
+// If we don't the index, we can directly tranverse a
+for (elem <- a)
+	println(elem)
+
+// Instead of 'until' we can use:
+a.indices
+a.indices.reverse
+```
+
 #### 3.4 Transforming Arrays
 
-#### 3.5 Common Alogrithm
+In Scala, it is easy to take an array (or array buffer) and transform it in some way. Such transformations don’t modify the original array but yield a new one. Use the `for/yield` loop.
+
+```scala
+val a = Array(2, 3, 5, 7, 11)
+val result1 = for (elem <- a) yield 2 * elem // Resulting in an Array(4, 6, 10, 14, 22)
+val result2 = for (elem <- a if elem % 2 == 0) yield 2 * elem
+// Or
+a.filter(_ % 2 == 0).map(2 * _)
+a filter {_ % 2 == 0} map {2 * _}
+```
+
+Generally, it is better to have all index values together instead of seeing them one by one.
+
+```scala
+val result = for (elem <- a if elem >= 0) yield elem // This way to find all non-negative elements, rather than using while loop and find them one by one
+
+// We can keep the positions to remove
+val positionsToRemove = for (i <- a.indices if a(i) < 0) yield i
+for (i <- positionsToRemove.reverse) a.remove(i) 
+// Or
+val positionsToKeep = for (i <- a.indices if a(i) >= 0) yield i
+for (j <- positionsToKeep.indices) a(j) = a(positionsToKeep(j))
+a.trimEnd(a.length - positionsToKeep.length)
+```
+
+#### 3.5 Common Alogrithms
+
+Scala has built-in functions for sums and sortings. In order to use the sum method, the element type must be a numeric type: either an integral or floating-point type or BigInteger/BigDecimal.
+
+```scala
+import scala.collection.mutable.ArrayBuffer
+
+Array(1, 7, 2, 9).sum // 19, works for ArrayBuffer too
+ArrayBuffer("Mary", "had", "a", "little", "lamb").max // "little"
+
+val b = ArrayBuffer(1, 7, 2, 9)
+val bSorted = b.sorted // b is unchanged, bSorted is ArrayBuffer(1,2,7,9)
+
+// Sort an array but not array buffer in place
+val a = Array(1, 7, 2, 9)
+scala.util.Sorting.quickSort(a) // a is now Array(1, 2, 7, 9)
+```
+
+We can display the contents of an array or array buffer:
+
+```scala
+a.mkString(" and ") // "1 and 2 and 7 and 9"
+a.mkString("<", ",", ">") //"<1,2,7,9>"
+
+b.toString
+ // "ArrayBuffer(1, 7, 2, 9)"
+ // The toString method reports the type, which is useful for debugging
+```
 
 #### 3.6 Deciphering Scaladoc
 
+Check the book...
+
 #### 3.7 Multidimensional Arrays
 
+Like in Java, multidimensional arrays are implemented as arrays of arrays. For example, a two-dimensional array of `Double` values has the type Array[Array[Double]]. To construct such an array, use the `ofDim` method:
+
+```scala
+val matrix = Array.ofDim[Double](3, 4) // Three rows, four columns
+matrix(row)(column) = 42 // To access an element
+// We can make ragged arrays, with varying row lengths
+val triangle = new Array[Array[Int]](10)
+	triangle(i) = new Array[Int](i + 1)
+```
+
 #### 3.8 Interoperating with Java
+
+Since Scala arrays are implemented as Java arrays, you can pass them back and forth between Java and Scala.
 
