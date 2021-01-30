@@ -587,19 +587,189 @@ keys.zip(values).toMap // a Map
 
 #### 5.1 Simple Classes and Parameterless Methods
 
+In Scala, a class is not declared as public. A Scala source file can contain multiple classes, and all of them have public visibility.
+
+```scala
+// a class example
+class Counter {
+ private var value = 0 // You must initialize the field
+ def increment() { value += 1 } // Methods are public by default
+ def current() = value
+}
+
+// to use this class
+val myCounter = new Counter()
+myCounter.increment()
+println(myCounter.current) // do not change the state, so we drop the parentheses
+// we can call parameterless method without parentheses
+// we can define parameterless method without parentheses
+```
+
+It is considered good style to use () for a mutator method (a method that changes the object state), and to drop the () for an accessor method (a method that does not change the object state).
+
 #### 5.2 Properties with Getters and Setters
 
-#### 5.3 Properties with Only Gettters
+With a public field, anyone could write to the parameter and change it. That’s why we prefer to use getter and setter methods:
+
+```java
+public class Person { // This is Java
+ private int age;
+ public int getAge() { return age; }
+ public void setAge(int age) { this.age = age; }
+}
+```
+
+Getters and setters are better than public fields because they let you start with simple get/set semantics and evolve them as needed.
+
+Scala provides getter and setter methods for every field. Here, we define a public field:
+
+```scala
+class Person {
+ var age = 0
+}
+```
+
+Scala generates a class for the JVM with a `private age` field and `getter` and `setter` methods. These methods are public because we did not declare age as private. (For a private field, the getter and setter methods are private.)
+
+In Scala, the getter and setter methods are called age and age_=. For example,
+
+```scala
+println(fred.age) // calls the method fred.age()
+fred.age = 21 // calls fred.age_ = (21)
+```
+
+#### 5.3 Properties with Only Getters
+
+Sometimes you want a read-only property with a getter but no setter. If the value of the property never changes after the object has been constructed, use a `val` field.
+
+Sometimes, however, you want a property that a client can’t set at will, but that is mutated in some other way. You can’t implement such a property with a val—a val never changes. Instead, provide a private field and a property getter, like this:
+
+```scala
+class Counter {
+    private var value = 0
+    def increment() { value += 1}
+    def current = value // No () in declaration
+}
+// Note that there are no () in the definition of the getter method. Therefore, you
+// must call the method without parentheses:
+val n = myCounter.current // Calling myCounter.current() is a syntax error
+```
+
+To summarize, you have four choices for implementing properties: 
+
+1. `var foo`: Scala synthesizes a getter and a setter. 
+2. `val foo`: Scala synthesizes a getter.
+3. You define methods `foo` and `foo_=`. 
+4. You define a method `foo`.
 
 #### 5.4 Object-Private Fields
 
+In Scala (as well as in Java or C++), a method can access the private fields of all objects of its class. For example,
+
+```scala
+class Counter {
+ 	private var value = 0
+ 	def increment() { value += 1 }
+ 	def isLess(other : Counter) = value < other.value
+ 	// Can access private field of other object
+}
+```
+
+Scala allows an even more severe access restriction with the `private[this]` qualifier:
+
+```scala
+private[this] var value = 0
+```
+
+Now, the methods of the Counter class can only access the value field of the current object, not of other objects of type Counter. This access is sometimes called `object-private`.
+
+With a class-private field, Scala generates private getter and setter methods. However, for an object-private field, no getters and setters are generated at all.
+
 #### 5.5 Bean Properties
+
+Check the book...
 
 #### 5.6 Auxiliary Constructors
 
+a Scala class can have as many constructors as you like. However, a Scala class has one constructor that is more important than all the others, called the `primary constructor`. In addition, a class may have any number of `auxiliary constructors`.
+
+1. The auxiliary constructors are called this. (In Java or C++, constructors have the same name as the class—which is not so convenient if you rename the class.)
+2. Each auxiliary constructor must start with a call to a previously defined auxiliary constructor or the primary constructor.
+
+```scala
+class Person {
+	private var name = ""
+	private var age = 0
+	def this(name: String) { // An auxiliary constructor
+		this() // Calls primary constructor
+		this.name = name
+	}
+	def this(name: String, age: Int) { // Another auxiliary constructor
+		this(name) // Calls previous auxiliary constructor
+		this.age = age
+	}
+}
+
+// construct the objects in three ways
+val p1 = new Person // Primary constructor
+val p2 = new Person("Fred") // First auxiliary constructor
+val p3 = new Person("Fred", 42) // Second auxiliary constructor
+```
+
 #### 5.7 The Primary Constructor
 
+In Scala, every class has a primary constructor. The primary constructor is not defined with a `this` method. Instead, it is interwoven with the class definition.
+
+1. The parameters of the primary constructor are placed immediately after the class name.
+
+   ```scala
+   class Person(val name: String, val age: Int) {
+       // Parameters of primary constructor in (...)
+       ...
+   }
+   ```
+
+2. The primary constructor executes all statements in the class definition. For example, in the following class, e.g., 
+
+   ```scala
+   class Person(val name: String, val age: Int) {
+       println("Just constructed another person") // a part of the primary constructor
+       def description = s"$name is $age years old"
+   }
+   ```
+
+3. You can often eliminate auxiliary constructors by using default arguments in the primary constructor. For example:
+
+   ```scala
+   class Person(val name: String = "", val age: Int = 0)
+   ```
+
+If you find the primary constructor notation confusing, you don’t need to use it. Just provide one or more auxiliary constructors in the usual way, but remember to call this() if you don’t chain to another auxiliary constructor.
+
 #### 5.8 Nested Classes
+
+In Scala, you can nest just about anything inside anything. You can define functions inside other functions, and classes inside other classes. Here is a simple example of the latter:
+
+```scala
+import scala.collection.mutable.ArrayBuffer
+class Network {
+	class Member(val name: String) {
+		val contacts = new ArrayBuffer[Member]
+	}
+	private val members = new ArrayBuffer[Member]
+	def join(name: String) = {
+		val m = new Member(name)
+		members += m
+		m
+	}
+}
+
+val chatter = new Network
+val myFace = new Network
+
+```
+
+In Scala, each instance has its own class Member, just like each instance has its own field members. That is, chatter.Member and myFace. Member are different classes. In our network example, you can add a member within its own network, but not across networks.
 
 #### 5.9 Exercises Tips
 
