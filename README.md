@@ -442,3 +442,164 @@ val triangle = new Array[Array[Int]](10)
 
 Since Scala arrays are implemented as Java arrays, you can pass them back and forth between Java and Scala.
 
+#### 3.9 Exercise Tips
+
+1. ```scala
+   // import scala.util.Random
+   def rand(n: Int) = new Array[Int](n).map(_ => Random.nextInt(n))
+   ```
+
+2. 
+
+### Chapter 4 Maps and Tuples
+
+A classic programmer’s saying is, “If you can only have one data structure, make it a hash table.” Hash tables—or, more generally, maps—are among the most versatile data structures.
+
+Maps are collections of key/value pairs. Scala has a general notion of tuples— aggregates of n objects, not necessarily of the same type. A pair is simply a tuple with n = 2. Tuples are useful whenever you need to aggregate two or more values together.
+
+By default, you get a hash map, but you can also get a tree map. Tuples are useful for aggregating values.
+
+#### 4.1 Constructing a Map
+
+```scala
+// constructs an immutable Map[String, Int] whose contents cannot be changed.
+val scores = Map("Alice" -> 10, "Bob" -> 3, "Cindy" -> 8)
+
+// constructs a mutable map
+val scores = scala.collection.mutable.Map("Alice" -> 10, "Bob" -> 3, "Cindy" -> 8)
+
+// we have to specify the type parameters if we want to build a empty map
+val scores = scala.collection.mutable.Map[String, Int]()
+```
+
+#### 4.2 Accessing Map Values
+
+```scala
+val bobsScore = scores("Bob")
+```
+
+If the map doesn’t contain a value for the requested key, an exception is thrown. To check whether there is a key with the given value, call the `contains`  method:
+
+```scala
+val bobsScore = if (scores.contains("Bob")) scores("Bob") else 0
+
+// if the map contains the key "Bob", return the value; otherwise, return 0
+val bobsScore = scores.getOrElse("Bob", 0)
+```
+
+#### 4.3 Updating Map Values
+
+In a mutable map, you can update a map value, or add a new one, with a () to the left of an = sign:
+
+```scala
+// update rule of mutable map
+scores("Bob") = 10 // update the existing value for a key
+scores("Fred") = 7 // add new key/value pair
+scores += ("Bob" -> 10, "Fred" -> 7) // add a series of pairs
+scores -= "Alice" //remove a pair
+
+// we cannot update an immutable map, but we can do this:
+val newScores = scores + ("Bob" -> 10, "Fred" -> 7)
+// or
+var scores = ...
+scores = scores + ("Bob" -> 10, "Fred" -> 7)
+scores += ("Bob" -> 10, "Fred" -> 7) // we can use this update rule if scores is a var
+// remove a key from an immutable map
+scores = scores - "Alice"
+// or
+scores -= "Alice" // same as a mutable map
+```
+
+#### 4.4 Iterating over Maps
+
+```scala
+for ((k, v) <- scores) {do your things}
+for (v <- scores.values) println(v)
+scores.keySet // A set such as Set("Bob", "Cindy", "Fred", "Alice")
+// reverse a map
+for ((k, v) <- map) yield (v, k)
+```
+
+#### 4.5 Sorted Maps
+
+There are two common implementation strategies for maps: hash tables and balanced trees. Hash tables use the hash codes of the keys to scramble entries, so iterating over the elements yields them in `unpredictable order` . By default, Scala gives you a map based on a hash table because it is usually more efficient. If you need to visit the keys in sorted order, use a `SortedMap` instead.
+
+```scala
+val scores = scala.collection.mutable.SortedMap("Alice" -> 10,
+ "Fred" -> 7, "Bob" -> 3, "Cindy" -> 8)
+```
+
+If you want to visit the keys in insertion order, use a `LinkedHashMap`. For example,
+
+```scala
+val months = scala.collection.mutable.LinkedHashMap("January" -> 1,
+ "February" -> 2, "March" -> 3, "April" -> 4, "May" -> 5, ...)
+```
+
+#### 4.6 Interoperating with Java
+
+Check the book...
+
+#### 4.7 Tuples
+
+Maps are collections of key/value pairs. Pairs are the simplest case of tuples— aggregates of values of different types. A tuple value is formed by enclosing individual values in parentheses.
+
+```scala
+val t = (1, 3.14, "Fred") // a tuple of type Tuple3[Int, Double, Java.lang.String]
+val second = t._2 // access its compoments with the methods _1, _2, _3
+// or 
+val second = t _2
+// note that the component positions of a tuple start with 1, not 0.
+
+// pattern matching
+val (first, second, third) = t // Sets first to 1, second to 3.14, third to "Fred"
+```
+
+#### 4.8 Zipping
+
+```scala
+val symbols = Array("<", "-", ">")
+val counts = Array(2, 10, 2)
+val pairs = symbols.zip(counts)
+// yields an array of pairs Array(("<", 2), ("-", 10), (">", 2))
+// the pairs can then be processed together
+for ((s, n) <- pairs) print(s * n) // Prints <<---------->>
+
+// we can use toMap method turns a collection pairs into a map
+keys.zip(values).toMap // a Map
+```
+
+#### 4.9 Exercise Tips
+
+1. ```scala
+   val discount = for((k, v) <- gizmos ) yield (k,v * 0.9)
+   ```
+
+2. ```scala
+   def minmax(a: Array[Int]) = (a.min, a.max)
+   ```
+
+3. ```scala
+   def lteqgt(values: Array[Int], v: Int) = (values.count(_<v), values.count(_==v), values.count(_>v))
+   ```
+
+### Chapter 5 Classes
+
+#### 5.1 Simple Classes and Parameterless Methods
+
+#### 5.2 Properties with Getters and Setters
+
+#### 5.3 Properties with Only Gettters
+
+#### 5.4 Object-Private Fields
+
+#### 5.5 Bean Properties
+
+#### 5.6 Auxiliary Constructors
+
+#### 5.7 The Primary Constructor
+
+#### 5.8 Nested Classes
+
+#### 5.9 Exercises Tips
+
