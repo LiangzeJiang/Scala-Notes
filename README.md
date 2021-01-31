@@ -769,7 +769,422 @@ val myFace = new Network
 
 ```
 
-In Scala, each instance has its own class Member, just like each instance has its own field members. That is, chatter.Member and myFace. Member are different classes. In our network example, you can add a member within its own network, but not across networks.
+In Scala, each instance has its own class Member, just like each instance has its own field members. That is, chatter.Member and myFace. Member are different classes. In our network example, you can add a member within its own network, but not across networks. 
 
 #### 5.9 Exercises Tips
+
+### chapter 6 Objects
+
+In this short chapter, you will learn when to use the object construct in Scala. Use ptg20087099 it when you need a class with a single instance, or when you want to find a home for miscellaneous values or functions.
+
+#### 6.1 Singletons
+
+Scala has no static methods or fields. Instead, you use the `object` construct. An object defines a single instance of a class with the features that you want.
+
+```scala
+// When you need a new unique account number in your application, call Accounts.newUniqueNumber().
+object Accounts {
+    private var lastNumber = 0
+    def newUniqueNumber() = { lastNumber += 1; lastNumber}
+}
+```
+
+The constructor of an object is executed when the object is first used. In our example, the Accounts constructor is executed with the first call to `Accounts. newUniqueNumber()`. If an object is never used, its constructor is not executed.
+
+Use an object in Scala whenever you would have used a singleton object in Java or C++: 
+
+- As a home for utility functions or constants 
+- When a single immutable instance can be shared efficiently 
+- When a single instance is required to coordinate some service (the singleton design pattern)
+
+#### 6.2 Companion Objects
+
+In Java or C++, you often have a class with both instance methods and static methods. In Scala, you can achieve this by having a class and a “companion” object of the same name.
+
+```scala
+class Account {
+    val id = Account.newUniqueNumber()
+    private var balance = 0.0
+    def deposit(amount: Double) { balance += amount }
+}
+
+object Account { // The companion object
+    private var lastNumber = 0
+    private def newUniqueNumber() = { lastNumber += 1; lastNumber}
+}
+```
+
+The class and its companion object can access each other’s private features. They must be located in the `same source file`. 
+
+Note that the companion object’s features are not in the scope of the class. The result is an object of a class that extends the given class and/or traits, and in addition has all of the features specified in the object definition.
+
+#### 6.3 Objects Extending a Class or Trait
+
+An object can extend a class and/or one or more traits.  The result is an object of a class that extends the given class and/or traits, and in addition has all of the features specified in the object definition.
+
+```scala
+object DoNothingAction extends UndoableAction("Do nothing") {
+    override def undo() {}
+    override def redo() {}
+}
+```
+
+#### 6.4 The `Apply` Method
+
+It is common to have objects with an apply method. The apply method is called for expressions of the form: `Object(arg1, ..., argN)`. Typically, such an apply method returns an object of the companion class.
+
+```scala
+class Account private (val id: Int, initialBalance: Double) {
+    private var balance = initialBalance
+    ...
+}
+
+object Account {
+    def apply(initialBalance: Double) = 
+    	new Account(newUniqueNumber(), initialBalance)
+    ...
+}
+
+// Now you can construct an account as
+val acct = Account(1000.0)
+```
+
+#### 6.5 Application Objects
+
+Each Scala program must start with an object’s `main` method of type `Array[String] => Unit`:
+
+```scala
+object Hello {
+    def main(args: Array[String]) {
+        println("Hello, World!")
+    }
+}
+```
+
+Instead of providing a `main` method for your application, you can extend the `App` trait and place the program code into the constructor body:
+
+```scala
+object Hello extends App {
+    println("Hello, world!")
+}
+```
+
+If you need the command-line arguments, you can get them from the args property:
+
+```scala
+object Hello extends App {
+    if (args.length > 0)
+    	println(f"Hello ${args(0)}")
+    else
+    	println("Hello, World!")
+}
+```
+
+#### 6.6 Enumerations
+
+Unlike Java or C++, Scala does not have enumerated types. However, the standard library provides an `Enumeration` helper class that you can use to produce enumerations. Define an object that extends the `Enumeration` class and `initialize each value in your enumeration with a call to the Value` method. For example,
+
+```scala
+object TrafficLightColor extends Enumeration {
+    val Red, Yellow, Green = Value
+}
+```
+
+Each call to the Value method returns a new instance of an inner class, also called Value.
+
+Alternatively, you can pass IDs, names, or both to the Value method:
+
+```scala
+val Red = Value(0, "Stop")
+val Yellow = Value(10)
+val Green = Value("Go")
+```
+
+You can now refer to the enumeration values as TrafficLightColor.Red, TrafficLightColor.Yellow, and so on. If that gets too tedious, use
+
+```scala
+import TrafficLightColor._
+```
+
+The call `TrafficLightColor.values` yields a set of all values:
+
+```scala
+for (c <- TrafficLightColor.values) println(s"${c.id}: $c")
+```
+
+ Some people recommend that you add a type alias:
+
+```scala
+object TrafficLightColor extends Enumeration {
+	type TrafficLightColor = Value
+ 	val Red, Yellow, Green = Value
+}
+```
+
+Now the type of the enumeration is TrafficLightColor.TrafficLightColor, which is only an improvement if you use an import statement. For example,
+
+```scala
+import TrafficLightColor._
+def doWhat(color: TrafficLightColor) = {
+ if (color == Red) "stop"
+ else if (color == Yellow) "hurry up"
+ else "go"
+}
+```
+
+Finally, you can look up an enumeration value by its ID or name. Both of the following yield the object TrafficLightColor.Red:
+
+```scala
+TrafficLightColor(0) // Calls Enumeration.apply
+TrafficLightColor.withName("Red")
+```
+
+#### 6.7 Exercise Tips
+
+### Chapter 7 Packages and Imports
+
+#### 7.1 Packages
+
+To add items to a package, you can include them in package statements, such as:
+
+```scala
+package com {
+    package horstmann {
+        package impatient {
+            class Employee
+            ...
+        }
+    }
+}
+```
+
+Then the class name Employee can be accessed anywhere as `com.horstmann. impatient.Employee`.
+
+Unlike an object or a class, a package can be defined in multiple files. The preceding code might be in a file Employee.scala, and a file Manager.scala might contain
+
+```scala
+package com {
+    package horstmann {
+        package impatient {
+            class Employee
+            ...
+        }
+    }
+}
+```
+
+Conversely, you can contribute to more than one package in a single file. The file `Employee.scala` may contain:
+
+```scala
+package com {
+    package horstmann {
+        package impatient {
+            class Employee
+            ...
+        }
+    }
+}
+
+package net {
+    package bigjava {
+        class Counter
+        ...
+    }
+}
+```
+
+There is no enforced relationship `between the directory of the source file and the package`.You don’t have to put `Employee.scala` and `Manager.scala` into a `com/horstmann/impatient` directory.
+
+#### 7.2 Scope Rules
+
+Scala packages nest just like all other scopes. You can access names from the enclosing scope. For example,
+
+```scala
+package com {
+    package horstmann {
+        object Utils {
+            def percentOf(value: Double, rate: Double) = vlaue * rate / 100
+            ...
+        }
+        package impatient {
+            class Employee {
+                ...
+                def giveRaise(rate: scala.Double) {
+                    salary += Utils.percentOf(salary, rate) //**
+                }
+            }
+        }
+	}
+}
+```
+
+The following code takes advantage of the fact that the scala package is always imported. Therefore, the collection package is actually `scala.collection`.
+
+```scala
+package com {
+    package horstmann {
+        package impatient {
+            class Manager {
+                val subordinates = new collection.mutable.ArrayBuffer[Employee]
+                ...
+            }
+        }
+    }
+}
+```
+
+#### 7.3 Chained Package Clauses
+
+A package clause can contain a “chain,” or path segment, such a clause limits the visible members.  Now a `com.horstmann.collection` package would no longer be accessible as `collection`.
+
+```scala
+package com.horstmann.impatient {
+    // Members of com and com.horstmann are not visible here
+    package people {
+        class Person
+        ...
+    }
+}
+```
+
+#### 7.4 Top-of-File Notation
+
+we can also change the aforementioned codes as:
+
+```scala
+package com.horstmann.impatient
+package people
+
+class Person
+...
+```
+
+#### 7.5 Package Objects
+
+A package can contain classes, objects, and traits, but not the definitions of functions or variables. That’s an unfortunate limitation of the Java virtual machine. It would make more sense to add utility functions or constants to a package than to some `Utils` object. Package objects address this limitation.
+
+Every package can have one package object. You define it in the parent package, and it has the same name as the child package. For example,
+
+```scala
+package com.horstmann.impatient
+
+package object people {
+    val defaultName = "John Q. Public"
+}
+
+package people {
+    class Person {
+        var name = defaultName // A constant from the package
+    }
+    ...
+}
+```
+
+#### 7.6 Package Visibility
+
+ The following method is visible in its own package:
+
+```scala
+package com.horstmann.impatient.people
+
+class Person {
+    private[people] def description = s"A person with name $name"
+    ...
+}
+
+// you can extend the visibility to an enclosing package:
+private[impatient] def description = s"A person with name $name"
+```
+
+#### 7.7 Imports
+
+Imports let you use short names instead of long ones. With the clause
+
+```scala
+import java.awt.Color
+```
+
+you can write Color in your code instead of java.awt.Color.
+
+```scala
+import java.awt._ // to import all members of a package as
+```
+
+You can also import all members of a class or object.
+
+```scala
+import java.awt.Color._
+val c1 = RED // Color.RED
+val c2 = decode("#ff0000") // Color.decode
+```
+
+Once you import a package, you can access its subpackages with shorter names.
+
+```scala
+import java.awt._
+
+def handler(evt: event.ActionEvent) { // java.awt.event.ActionEvent
+    ...
+}
+```
+
+#### 7.8 Import Can Be Anywhere
+
+In Scala, an import statement can be anywhere, not just at the top of a file. The scope of the import statement extends until the end of the enclosing block. For example,
+
+```scala
+class Manager {
+    import scala.collection.mutable._
+    val subordinates = new ArrayBuffer[Employee]
+    ...
+}
+```
+
+By putting the imports where they are needed, you can greatly reduce the potential for conflicts.
+
+#### 7.9 Renaming and Hiding Members
+
+If you want to import more than one member from a package, use a selector like this:
+
+```scala
+import java.awt.{Color, Font}
+
+// The selector syntax lets you rename members:
+import java.util.{HashMap => JavaHashMap}
+import scala.collection.mutable._
+```
+
+Now JavaHashMap is a java.util.HashMap and plain HashMap is a scala.collection.mutable. HashMap.
+
+The selector HashMap => _ hides a member instead of renaming it. This is only useful if you import others:
+
+```scala
+import java.util.{HashMap => _, _}
+import scala.collection.mutable._
+```
+
+Now HashMap unambiguously refers to scala.collection.mutable.HashMap since java.util. HashMap is hidden.
+
+#### 7.10 Implicit Imports
+
+Every Scala program implicitly starts with
+
+```scala
+import java.lang._
+import scala._
+import Predef._
+```
+
+As with Java programs, java.lang is always imported. Next, the scala package is imported, but in a special way. Unlike all other imports, this one is allowed to override the preceding import. For example, scala.StringBuilder overrides java.lang.StringBuilder instead of conflicting with it.
+
+Finally, the Predef object is imported. It contains commonly used types, implicit conversions, and utility methods. (The methods could equally well have been placed into the scala package object, but Predef was introduced before Scala had package objects.)
+
+```scala
+// we do not need to write package names that start with scala. E.g.,
+collection.mutable.HashMap
+// is equal to
+scala.collection.mutable.HashMap
+```
+
+#### 7.11 Exercise Tips
 
