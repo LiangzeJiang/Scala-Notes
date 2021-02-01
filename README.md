@@ -1188,3 +1188,421 @@ scala.collection.mutable.HashMap
 
 #### 7.11 Exercise Tips
 
+### Chapter 8 Inheritance
+
+Highlights in this chapter:
+
+- The `extends` and `final` keywords are as in Java
+- You must use `override` when you override a method
+- Only the primary constructor can call the primary superclass constructor
+- You can override fields
+
+#### 8.1 Extending a Class
+
+Like in Java,
+
+```scala
+class Employee extends Person {
+    var salary = 0.0
+    ...
+}
+```
+
+we can specify fields and methods that are new to the subclass or that override the methods in the superclass.
+
+You can declare a class `final` so that it cannot be extended. You can also declare individual methods or fields `final` so that they cannot be overridden.
+
+#### 8.2 Overriding Methods
+
+In Scala, you **must** use the `override` modifier when you override a method that isn’t abstract.
+
+```scala
+class Person {
+    ...
+    override def toString = s"${getClass.getName}[name=$name]"
+}
+```
+
+Invoking a superclass method in Scala works exactly like in Java, with the keyword `super`:
+
+```scala
+class Employee extends Person {
+    ...
+    override def toString = s"${super.getName}[name=$name]"
+}
+```
+
+The call super.toString invokes the toString method of the superclass—that is, the Person.toString method.
+
+#### 8.3 Type Checks and Casts
+
+To test whether an object belongs to a given class, use the `isInstanceOf` method. . If the test succeeds, you can use the asInstanceOf method to convert a reference to a subclass reference:
+
+```scala
+if (p.isInstanceOf[Employee]) {
+    val s = p.asInstanceOf[Employee] // s has type Employee
+    ...
+}
+```
+
+The `p.isInstanceOf[Employee]` test succeeds if p refers to an object of class `Employee` or its subclass (such as `Manager`). 
+
+If p is `null`, then `p.isInstanceOf[Employee]` returns false and `p.asInstanceOf[Employee]` returns `null`. 
+
+If p is not an Employee, then `p.asInstanceOf[Employee]` throws an exception. 
+
+If you want to test whether p refers to an Employee object, but not a subclass, use
+
+```scala
+if (p.getClass == classOf[Employee])
+```
+
+#### 8.4 Protected Fields and Methods
+
+As in Java or C++, you can declare a field or method as `protected`. Such a member is accessible from any subclass, but not from other locations.
+
+#### 8.5 Superclass Construction
+
+Recall from Chapter 5 that a class has one primary constructor and any number of auxiliary constructors, and that all auxiliary constructors must start with a call to a preceding auxiliary constructor or the primary constructor.
+
+As a consequence, an auxiliary constructor can **never** invoke a superclass constructor directly. Because the auxiliary constructors of the subclass eventually call the primary constructor of the subclass, and only the primary constructor can call a superclass constructor.
+
+Intertwining the class and the constructor makes for very concise code. You may find it helpful to think of the primary constructor parameters as parameters of the class. Here, the Employee class has three parameters: name, age, and salary, two of which it “passes” to the superclass.
+
+```scala
+class Employee(name: String, age: Int, val salary : Double) extends Person(name, age)
+```
+
+corresponding Java version is
+
+```java
+public class Employee extends Person {
+    private double salary;
+    public Employee(String name, int age, double salary) {
+        super(name, age)
+        this.salary = salary
+    }
+}
+```
+
+In a Scala constructor, you can never call super(params), as you would in Java, to call the superclass constructor.
+
+#### 8.6 Overriding Fields
+
+Recall from Chapter 5 that a field in Scala consists of a private field and accessor/mutator methods. You can override a `val` (or a parameterless `def`) with another val field of the same name.
+
+```scala
+abstract class Person {
+    def id: Int // Each person has an ID that is computed in some way
+    ...
+}
+
+class Student(override val id: Int) extends Person
+// A student ID is simply provided in the constructor
+```
+
+- A def can only override another def. 
+- A val can only override another val or a parameterless def. 
+- A var can only override an abstract var.
+
+#### 8.7 Anonymous Subclasses
+
+As in Java, you make an instance of an anonymous subclass if you include a block with definitions or overrides, such as
+
+```scala
+val alien = new Person("Fred") {
+    def greeting = "Greetings, Earthling! My name is Fred."
+}
+```
+
+Technically, this creates an object of a structural type. The type is denoted as Person{def greeting: String}. You can use this type as a parameter type:
+
+```scala
+def meet(p: Person{def greeting: String}) {
+    println(s"${p.name} says: ${p.greeting}")
+}
+```
+
+#### 8.8 Abstract Classes
+
+As in Java, you can use the abstract keyword to denote a class that cannot be instantiated, usually because one or more of its methods are not defined. For example,
+
+```scala
+abstract class Person(val name: String) {
+    def id: Int // No method body, this is an abstract method
+}
+```
+
+Here we say that every person has an ID, but we don’t know how to compute it. Each concrete subclass of Person needs to specify an id method.  In Scala, unlike Java, you do not use the abstract keyword for an abstract method. **You simply omit its body.** As in Java, a class with at least one abstract method must be declared abstract.
+
+In a subclass, you **need not** use the `override` keyword when you define a method that was abstract in the superclass.
+
+```scala
+class Employee(name: String) extends Person(name) {
+    def id = name.hashCode // override keyword not required
+}
+```
+
+#### 8.9 Abstract Fields
+
+In addition to abstract methods, a class can also have abstract fields. An abstract field is simply a field without an initial value.
+
+```scala
+abstract class Person {
+    val id: Int
+    var name: String
+}
+```
+
+This class defines abstract getter methods for the id and name fields, and an abstract setter for the name field. The generated Java class has no fields.
+
+Concrete subclasses must provide concrete fields,
+
+```scala
+class Employee(val id: Int) extends Person {
+    var name = ""
+}
+```
+
+As with methods, no override keyword is required in the subclass when you define a field that was abstract in the superclass.
+
+You can always customize an abstract field by using an anonymous type:
+
+```scala
+val fred = new Person {
+    val id = 1729
+    var name = "Fred"
+}
+```
+
+#### 8.10 Construction Order and Early Definitions
+
+Check the book...
+
+#### 8.11 The Scala Inheritance Hierarchy
+
+- The classes that correspond to the primitive types in Java, as well as the type Unit, extend `AnyVal`. 
+
+- You can also define your own `value classes` .
+
+- All other classes are subclasses of the `AnyRef` class.
+
+- Both `AnyVal` and `AnyRef` extend the `Any` class, the root of the hierarchy.
+
+- The `Any` class defines methods `isInstanceOf`, `asInstanceOf`, and the methods for equality and hash codes.
+
+- `AnyVal` does not add any methods. It is just a marker for value types.
+- The AnyRef class adds the monitor methods wait and notify/notifyAll from the Object class. It also provides a synchronized method with a function parameter.
+- All Scala classes implement the marker interface ScalaObject, which has no methods.
+
+Picture on page101...
+
+The `???` method is declared with return type Nothing. It never returns but instead throws a NotImplementedError when invoked. You can use it for methods that you still need to implement:
+
+```scala
+class Person(val name: String) {
+    def description = ???
+}
+```
+
+#### 8.12 Object Equality
+
+In Scala, the eq method of the AnyRef class checks whether two references refer to the same object. The equals method in AnyRef calls eq. When you implement a class, you should consider overriding the equals method to provide a natural notion of equality for your situation.
+
+if you define a `class Item(val description: String, val price: Double)`, you might want to consider two items equal if they have the same description and price. Here is an appropriate equals method:
+
+```scala
+final override def equals(other: Any) = {
+    other.isInstanceOf[Item] && {
+        val that = other.asInstanceOf[Item]
+        description == that.description && price == that.price
+    }
+}
+
+// or better, use pattern matching:
+final override def equals(other: Any) = other match {
+    case that: Item => description == that.description && price == that.price
+    case _ => false
+}
+```
+
+When you define equals, remember to define hashCode as well. The hash code should be computed only from the fields that you use in the equality check, so that equal objects have the same hash code. In the Item example, combine the hash codes of the fields.
+
+```scala
+final override def hashCode = (description, price).##
+```
+
+The `##` method is a null-safe version of the hashCode method that yields 0 for null instead of throwing an exception.
+
+In an application program, you don’t generally call eq or equals. Simply use the == operator. For reference types, it calls equals after doing the appropriate check for null operands.
+
+#### 8.13 Value Classes
+
+Some classes have a single field, such as the wrapper classes for primitive types, and the “rich” or “ops” wrappers that Scala uses to add methods to existing types. It is inefficient to allocate a new object that holds just one value. Value classes allow you to define classes that are “inlined,” so that the single field is used directly.
+
+A value class has these properties: 
+
+1. The class extends AnyVal. 2. Its primary constructor has exactly one parameter, which is a val, and no body. 3. The class has no other fields or constructors. 4. The automatically provided equals and hashCode methods compare and hash the underlying value.
+
+```scala
+// define a value class that wraps a “military time” value:
+class MilTime(val time: Int) extends AnyVal {
+	def minutes = time % 100
+	def hours = time / 100
+	override def toString = f"$time04d"
+}
+```
+
+#### 8.14 Exercise Tips
+
+### Chapter 9 Files and Regular Expressions
+
+#### 9.1 Reading Lines
+
+To read all lines from a file, call the `getLines` method on a `scala.io.Source` object.
+
+```scala
+import scala.io.Source
+val source = Source.fromFile("myfile.txt", "UTF-8")
+val lineIterator = source.getLines // result in an iterator
+for (l <- lineIterator) process l
+```
+
+Or you can put the lines into an array or array buffer by applying the toArray or toBuffer method to the iterator:
+
+```scala
+val lines = source.getLines.toArray
+
+// Sometimes, you just want to read an entire file into a string.
+val contents = source.mkString
+```
+
+Call close when you are done using the Source object.
+
+#### 9.2 Reading Characters
+
+To read individual characters from a file, you can use a Source object directly as an iterator since the `Source` class extends `Iterator[Char]`:
+
+```scala
+for (c <- source) process c
+```
+
+if your file isn’t large, you can just read it into a string and process that:
+
+```scala
+val contents = source.mkString
+```
+
+#### 9.3 Reading Tokens and Numbers
+
+Here is a quick-and-dirty way of reading all whitespace-separated tokens in a source:
+
+```scala
+val tokens = source.mkString.split("\\s+")
+```
+
+To convert a string into a number, use the toInt or toDouble method. For example, if you have a file containing floating-point numbers, you can read them all into an array by
+
+```scala
+val numbers = for (w <- tokens) yield w.toDouble
+// or
+val number = tokens.map(_.toDouble)
+```
+
+Finally, note that you can read numbers from scala.io.StdIn:
+
+```scala
+print("How old are you?")
+val age = Scala.io.readInt() // or use readDouble or readLong
+```
+
+#### 9.4 Reading from URLs and Other Sources
+
+The Source object has methods to read from sources other than files:
+
+```scala
+val source1 = Source.fromURL("http://horstmann.com", "UTF-8")
+val source2 = Source.fromString("Hello, World!")
+ // Reads from the given string—useful for debugging
+val source3 = Source.stdin
+ // Reads from standard input
+```
+
+#### 9.5 Reading Binary Files
+
+Scala has no provision for reading binary files. You’ll need to use the Java library. Here is how you can read a file into a byte array:
+
+```scala
+val file = new File(filename)
+val in = new FileInputStream(file)
+val bytes = new Array[Byte](file.length.toInt)
+in.read(bytes)
+in.close()
+```
+
+#### 9.6 Writing Text Files
+
+Scala has no built-in support for writing files. To write a text file, use a java.io.PrintWriter, for example:
+
+```scala
+val out = new PrintWriter("numbers.txt")
+for (i <- 1 to 100) out.println(i)
+out.close()
+```
+
+#### 9.7 Visiting Directories
+
+Check the book...
+
+#### 9.8 Serialization
+
+Here is how you declare a serializable class in Java and Scala.
+
+```scala
+//Java:
+public class Person implements java.io.Serializable {
+ private static final long serialVersionUID = 42L;
+ ...
+}
+//Scala:
+@SerialVersionUID(42L) class Person extends Serializable
+```
+
+#### 9.9 Process Control
+
+Check the book...
+
+#### 9.10 Regular Expressions
+
+When you process input, you often want to use regular expressions to analyze it. The `scala.util.matching.Regex` class makes this simple. To construct a Regex object, use the r method of the String class:
+
+```scala
+val numPattern = "[0-9]+".r
+// If the regular expression contains backslashes or quotation marks, then it is a
+// good idea to use the “raw” string syntax, """...""".
+val wsnumwsPattern = """\s+[0-9]+\s+""".r
+```
+
+The `findAllIn` method returns an `Iterator[String]` through all matches. You can use it in a for loop:
+
+```scala
+for (matchString <- numPattern.findAllIn("99 bottles, 98 bottles"))
+	println(matchString)
+// Alternatively, turn the iterator into an array:
+val matches = numPattern.findAllIn("99 bottles, 98 bottles").toArray
+// To find the first match in a string, use findFirstIn.
+val firstMatch = wsnumwsPattern.findFirstIn("99 bottles, 98 bottles")
+```
+
+#### 9.11 Regular Expression Groups
+
+Groups are useful to get subexpressions of regular expressions. Add parentheses around the subexpressions that you want to extract,
+
+```scala
+val numitemPattern = "([0-9]+)([a-z]+)".r
+```
+
+#### 9.12 Exercise Tips
+
+
+
