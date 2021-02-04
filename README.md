@@ -1604,5 +1604,522 @@ val numitemPattern = "([0-9]+)([a-z]+)".r
 
 #### 9.12 Exercise Tips
 
+### Chapter 10 Traits
+
+#### 10.1 Why No Multiple Inheritance?
+
+#### 10.2 Traits as Interfaces
+
+#### 10.3 Traits with Concrete Implementations
+
+#### 10.4 Objects with Traits
+
+#### 10.5 Layered Traits
+
+#### 10.6 Overriding Abstract Methods in Traits
+
+#### 10.7 Traits for Rich Interfaces
+
+#### 10.8 Concrete Fields in Traits
+
+#### 10.9 Abstract Fields in Traits
+
+#### 10.10 Trait Construction Order
+
+#### 10.11 Initializing Trait Fields
+
+#### 10.12 Traits Extending Classes
+
+#### 10.13 Self Types
+
+#### 10.14 What Happens under the Hood
+
+#### 10.15 Exercise Tips
+
+### Chapter 11 Operators
+
+This chapter covers in detail implementing your own operators—methods with ptg20087099 the same syntax as the familiar mathematical operators. Operators are often used to build domain-specific languages—minilanguages embedded inside Scala.
+
+#### 11.1 Identifiers
+
+The names of variables, functions, classes, and so on are collectively called `identifiers`. As in Java, Unicode characters are allowed. 
+
+We can also use:
+
+- The ASCII characters ! # % & * + - / : < = > ? @ \ ^ | ~ that are not letters, digits, underscore, the .,; punctuation marks, parentheses () [] {}, or quotation marks ' ` ".
+
+- Unicode mathematical symbols or other symbols from the Unicode categories Sm and So. For example, ** and \sqrt are valid identifiers.
+
+- Finally, you can include just about any sequence of characters in backquotes. For example,
+
+  ```scala
+  val `val` = 42
+  ```
+
+#### 11.2 Infix Operators
+
+We can write```a identifier b``` where identifier denotes a method with two parameters (one implicit, one explicit). For example, the expression
+
+```scala
+1 to 10
+// is actually a method call 
+1.to(10)
+```
+
+This is called an infix(中缀) expression because the operator is between the arguments. The operator can contain letters, as in to, or it can contain operator characters—for example,
+
+```scala
+1 -> 10
+// is actually a method call
+1.->(10)
+```
+
+To define an operator in your own class, simply define a method whose name is that of the desired operator. For example, here is a Fraction class that multiplies two fractions according to the law
+
+```scala
+// (n1 / d1) × (n2 / d2) = (n1n2 / d1d2)
+class Fraction(n: Int, d: Int) {
+    private val num = ...
+    private val den = ...
+    ...
+    def *(other:Fraction) = new Fraction(num * other.num, den * other.den)
+}
+```
+
+#### 11.3 Unary Operators
+
+Infix operators are binary operators—they have two parameters. An operator with one parameter is called a unary operator.
+
+- The four operators `+, -, !, ~` are allowed as prefix operators, appearing before their arguments. They are converted into calls to methods with the name unary_operator. For example, `-a` means the same as `a.unary_-`.
+
+- If a unary operator follows its argument, it is a postfix operator. The expression`a identifier` is the same as the method call `a.identifier()`. For example, 
+
+  ```scala
+  42 toString
+  // is the same as
+  42.toString()
+  ```
+
+#### 11.4 Assignment Operators
+
+An assignment operator has the form `operator=`, and the expression `a operator= b` means the same as `a = a operator b`.
+
+- <=, >=, and != are not assignment operators.
+- An operator starting with an = is never an assignment operator (==, ===, =/=, and so on).
+- If a has a method called operator=, then that method is called directly.
+
+#### 11.5 Precedence
+
+ Scala can have arbitrary operators, so it uses a scheme that works for all operators, while also giving the familiar precedence order to the standard ones. 
+
+Except for assignment operators, the precedence is determined by the first character of the operator.
+
+![image-20210202095753428](C:\Users\姜良泽\AppData\Roaming\Typora\typora-user-images\image-20210202095753428.png)
+
+in the same row yield operators with the same precedence. For example, `+` and `->`have the same precedence. 
+
+Postfix operators have lower precedence than infix operators: 
+
+- `a infixOp bpostfixOp` is the same as `(a infixOp b)postfixOp`
+
+#### 11.6 Associativity
+
+When you have a sequence of operators of the same precedence, the associativity determines whether they are evaluated left-to-right or right-to-left. For example, in the expression 17 – 2 – 9, one computes (17 – 2) – 9. The – operator is left-associative.
+
+In Scala, all operators are left-associative except for
+
+- operators that end in a colon (:)
+- assignment operators
+
+In particular, the `::` operator for constructing lists is right-associative. For example, `1 :: 2 :: Nil` means `1 :: (2 :: Nil)`.
+
+```scala
+val a = List(1, 2, 3)
+val b = List(4, 5, 6)
+
+a::b // List(List(1, 2, 3), 4, 5, 6)
+a++b // List(1, 2, 3, 4, 5, 6)
+```
+
+A right-associative binary operator is a method of its second argument. For example, `2 :: Nil` means `Nil.::(2)`
+
+#### 11.7 The apply and update Methods
+
+- Scala lets you extend the function call syntax `f(arg1, arg2, ...)` to values other than functions. If f is not a function or method, then this expression is equivalent to the call `f.apply(arg1, arg2, ...)`.
+- When it occurs to the left of an assignment. The expression `f(arg1, arg2, ...) = value` corresponds to the call `f.update(arg1, arg2, ..., value)`
+
+This mechanism is used in arrays and maps. For example,
+
+```scala
+val scores = new scala.collection.mutable.HashMap[String, Int]
+scores("Bob") = 100
+val bobScore = scores("Bob")
+```
+
+The apply method is also commonly used in companion objects to construct objects without calling new. For example, consider a Fraction class.
+
+```scala
+class Fraction(n: Int, d:Int) {
+    ...
+}
+
+object Fraction {
+    def apply(n: Int, d: Int) = new Fraction(n, d)
+}
+```
+
+Because of the apply method, we can construct a fraction as `Fraction(3, 4)` instead of `new Fraction(3, 4)`. That sounds like a small thing, but if you have many Fraction values, it is a welcome improvement: `val result = Fraction(3, 4) * Fraction(2, 5)`
+
+#### 11.8 Extractors
+
+An extractor is an object with an unapply method. You can think of the unapply method as the opposite of the apply method of a companion object. An `apply` method takes construction parameters and turns them into an object. An `unapply` method takes an object and extracts values from it—usually the values from which the object was constructed.
+
+Consider the Fraction class from the preceding section. The apply method makes a fraction from a numerator and denominator. An unapply method retrieves the numerator and denominator. You can use it in a variable definition
+
+```scala
+var Fraction(a, b) = Fraction(3, 4) * Fraction(2, 5)
+// a, b are initialized with the numerator and denominator of the result
+```
+
+or a pattern match
+
+```scala
+case Fraction(a,b) => ... // a, b are bound to the numerator and denominator
+```
+
+A declaration val `Fraction(a, b) = f` becomes 
+
+```scala
+val tupleOption = Fraction.unapply(f)
+if (tupleOption == None) throw new MatchError
+// tupleOption is Some((t1, t2))
+val a = t1
+val b = t2
+```
+
+In the preceding example, the apply and unapply methods are inverses of one another. However, that is not a requirement. You can use extractors to extract information from an object of any type.
+
+#### 11.9 Extractors with One or No Arguments
+
+In Scala, there are no tuples with one component. If the unapply method extracts a single value, it should just return an Option of the target type. For example,
+
+```scala
+object Number {
+    def unapply(input: String): Option[Int] = 
+    	try {
+            Some(input.trim.toInt)
+        } catch {
+            case ex: NumberFormatException => None
+        }
+}
+```
+
+With this extractor, you can extract a number from a string: `val Number(n) = "1729"`
+
+#### 11.10 The unapplySeq Method
+
+Check the book...
+
+#### 11.11 Dynamic Invocation
+
+Check the book...
+
+#### 11.12 Exercise Tips
+
+### Chapter 12 Higher-Order Functions
+
+Scala mixes object orientation with functional features. In a functional programming language, functions are first-class citizens that can be passed around and manipulated just like any other data types. This is very useful whenever you want to pass some action detail to an algorithm. In a functional language, you just wrap that detail into a function that you pass as a parameter.
+
+#### 12.1 Functions as Values
+
+In Scala, a function is a first-class citizen, just like a number. You can store a function in a variable:
+
+```scala
+import scala.math._
+val num = 3.14
+val fun = ceil _
+// this code sets num to 3.14 and fun to the ceil function
+```
+
+The `_` behind the ceil function indicates that you really meant the function, and you didn’t just forget to supply the arguments.
+
+Technically, the _ turns the ceil method into a function. In Scala, you cannot manipulate methods, only functions
+
+Here is how to call the function stored in fun: `fun(num) // 4.0` As you can see, the normal function call syntax is used. The only difference is that fun is a variable containing a function, not a fixed function.
+
+Here is how you can give `fun` to another function:
+
+```scala
+Array(3.14, 1.42, 2.0).map(fun) // Array(4.0, 2.0, 2.0)
+```
+
+The map method accepts a function, applies it to all values in an array, and returns an array with the function values.
+
+#### 12.2 Anonymous Functions
+
+In Scala, you don’t have to give a name to each function, just like you don’t have to give a name to each number.
+
+```scala
+(x: Double) => 3 * x
+
+// Of course, we can store this function in a variable
+val triple = (x: Double) => 3 * x
+// this is the same as
+def triple(x: Double) = 3 * x
+
+// but we don't need to name it
+Array(3.14, 1.42, 2.0).map((x: Double) => 3 * x)
+// or
+Array(3.14, 1.42, 2.0) map {(x: Double) => 3 * x }
+```
+
+#### 12.3 Functions with Function Parameters
+
+In this section, you will see how to implement a function that takes another function as a parameter.
+
+```scala
+def valueAtOneQuarter(f: (Double) => Double) = f(0.25)
+// parameter can be any function receiving and returning a Double
+
+// Another example
+valueAtOneQuarter(ceil _)
+valueAtOneQuarter(sqrt _)
+// The type of valueAtOneQuarter is ((Double) => Double) => Double
+```
+
+Since valueAtOneQuarter is a function that receives a function, it is called a higher-order function.
+
+A higher-order function can also produce a function.
+
+```scala
+def mulBy(factor: Double) = (x: Double) => factor * x
+```
+
+For example, mulBy(3) returns the function (x : Double) => 3 * x which you have seen in the preceding section. The power of `mulBy` is that it can deliver functions that multiply by any amount
+
+#### 12.4 Parameter Inference
+
+When you pass an anonymous function to another function or method, Scala helps you out by deducing types when possible. For example, you don’t have to write
+
+```scala
+valueAtOneQuarter((x: Double) => 3 * x) // 0.75
+
+// because it has the type ((Double) => Double) => Double
+def valueAtOneQuarter(f: (Double) => Double) = f(0.25)
+```
+
+Since the valueAtOneQuarter method knows that you will pass in a (Double) => Double function, you can just write
+
+```scala
+valueAtOneQuarter((x) => 3 * x)
+```
+
+As a special bonus, for a function that has just one parameter, you can omit the () around the parameter:
+
+```scala
+// we can further write it as
+valueAtOneQuarter(x => 3 * x)
+```
+
+If a parameter occurs only once on the right-hand side of the =>, you can replace it with an underscore:
+
+```scala
+// Finally
+valueAtOneQuarter(3 * _)
+```
+
+Keep in mind that these shortcuts only work when the parameter types are known.
+
+```scala
+val fun = 3 * _ // Error: Can't infer types
+val fun = 3 * (_: Double) // OK
+val fum: (Double) => Double = 3 * _
+```
+
+#### 12.5 Useful Higher-Order Functions
+
+You have seen `map`, which applies a function to all elements of a collection and returns the result. Here is a quick way of producing a collection containing 0.1, 0.2, . . . , 0.9:
+
+```scala
+(1 to 9).map(0.1 * _)
+```
+
+Another example,
+
+```scala
+(1 to 9).map("*" * _).foreach(println _)
+```
+
+Here, we also use foreach, which is like map except that its function doesn’t return a value. The foreach method simply applies the function to each argument.
+
+The filter method yields all elements that match a particular condition. For example, here’s how to get only the even numbers in a sequence:
+
+```scala
+(1 to 9).filter(_ % 2 == 0)
+```
+
+Of course, that’s not the most efficient way of getting this result.
+
+The `reduceLeft` method takes a `binary` function—that is, a function with two parameters—and applies it to all elements of a sequence, going from left to right. For example,
+
+```scala
+(1 to 9).reduceLeft(_ * _) // Each underscore denotes a separate parameter.
+// (...((1 * 2) * 3) * ... * 9)
+```
+
+You also need a binary function for sorting. For example,
+
+```scala
+"Mary had a little lamb".split(" ").sortWith(_.length < _.length)
+```
+
+#### 12.6 Closures
+
+In Scala, you can define a function inside any scope: in a package, in a class, or even inside another function or method. In the body of a function, you can access any variables from an enclosing scope. That may not sound so remarkable, but note that your function may be called when the variable is no longer in scope.
+
+Such a function is called a closure. A closure consists of code together with the definitions of any nonlocal variables that the code uses.
+
+These functions are actually implemented as objects of a class, with an instance variable factor and an apply method that contains the body of the function.
+
+#### 12.7 SAM Conversions (Single Abstract Method)
+
+In Scala, you pass a function as a parameter whenever you want to tell another function what action to carry out.
+
+Confused about this section...
+
+#### 12.8 Currying
+
+Currying (named after logician Haskell Brooks Curry) is the process of turning a function that takes two arguments into a function that takes one argument. That function returns a function that consumes the second argument.
+
+```scala
+// a function takes two arguments
+val mul = (x: Int, y: Int) => x * y
+// a function takes one arguments
+val mulOneAtATime = (x: Int) => ((y: Int) => x * y)
+// to call
+mulOneAtATime(6)(7)
+mul(6, 7)
+// When you use def, there is a shortcut for defining such curried methods in Scala:
+def mulOneAtATime(x: Int)(y: Int) = x * y
+```
+
+Sometimes, you can use currying for a method parameter so that the type inferencer has more information.  For example,
+
+```scala
+val a = Array("Hello", "World")
+val b = Array("hello", "world")
+a.corresponds(b)(_.equalsIgnoreCase(_))
+```
+
+Note that the function `_.equalsIgnoreCase(_)` is passed as a curried parameter, in a separate set of (...). When you look into the Scaladoc, you will see that corresponds is declared as
+
+```scala
+def corresponds[B](that: Seq[B])(p: (A, B) => Boolean): Boolean 
+```
+
+The that sequence and the predicate function p are separate curried parameters. The type inferencer can figure out what B is from the type of that, and then it can use that information when analyzing the function that is passed for p.
+
+#### 12.9 Control Abstraction
+
+In Scala, one can model a sequence of statements as a function with no parameters or return value. For example, here is a function that runs some code in a thread:
+
+```scala
+def runInThread(block: () => Unit) {
+    new Thread {
+        override def run () { block() }
+    }.start()
+}
+```
+
+The code is given as a function of type () => Unit. However, when you call this function, you need to supply an unsightly () =>:
+
+```scala
+runInThread{ () => println("Hi"); Thread.sleep(10000); println("Bye") }
+```
+
+To avoid the () => in the call, use the call by name notation: Omit the (), but not the =>, in the parameter declaration and in the call to the parameter function:
+
+```scala
+def runInThread(block: => Unit) {
+    new Thread {
+        override def run() { block }
+    }.start()
+}
+
+// To call
+runInThread { println("Hi"); Thread.sleep(10000); println("Bye") }
+```
+
+we can innovate a bit and define an until statement that works like while, but with an inverted condition:
+
+```scala
+def until(condition: => Boolean)(block: => Unit) {
+    if (!condition) {
+        block
+        until(condition)(block)
+    }
+}
+
+// To call
+var x = 10
+until (x == 0) {
+    x -= 1
+    println(x)
+}
+```
+
+
+
+#### 12.10 The `return` Expression
+
+In Scala, you don’t use a return statement to return function values. The return value of a function is simply the value of the function body.
+
+However, you can use return to return a value from an anonymous function to an enclosing named function. This is useful in control abstractions. For example, consider this function:
+
+```scala
+def indexOf(str: String, ch: Char): Int = {
+    var i = 0
+    until (u == str.length) {
+        if (str(i) == ch) return i
+        i += 1
+    }
+    return -1
+}
+```
+
+Here, the anonymous function { if (str(i) == ch) return i; i += 1 } is passed to until. When the return expression is executed, the enclosing named function indexOf terminates and returns the given value. 
+
+If you use return inside a named function, you need to specify its return type. For example, in the indexOf function above, the compiler was not able to infer that it returns an Int. 
+
+The control flow is achieved with a special exception that is thrown by the return expression in the anonymous function, passed out of the until function, and caught in the indexOf function.
+
+#### 12.11 Exercise Tips
+
+1. ```scala
+   def values(fun: (Int) => Int, low: Int, high: Int) = for (i <- low to high) yield (i,fun(i))
+   ```
+
+2. ```scala
+   max_value = a.reduceLeft((x, y) => if (x > y) x else y)
+   ```
+
+3. ```scala
+   def factorial(num: Int) = (1 to num).reduceLeft(_ * _)
+   ```
+
+4. ```scala
+   def largest(fun: (Int) => Int, inputs: Seq[Int]) = inputs.map(fun).reduceLeft((x, y) => if (x > y) x else y)
+   ```
+
+5. ```scala
+   def largest_index(fun: (Int) => Int, inputs: Seq[Int]) = inputs.map(x => (x, fun(x)).reduceLeft((x, y) => if (x._2 > y._2) x else y)._1
+   ```
+
+   
+
+
+
+
+
 
 
