@@ -2115,11 +2115,700 @@ The control flow is achieved with a special exception that is thrown by the retu
    def largest_index(fun: (Int) => Int, inputs: Seq[Int]) = inputs.map(x => (x, fun(x)).reduceLeft((x, y) => if (x._2 > y._2) x else y)._1
    ```
 
-   
+### Chapter 13 Collections
+
+Key points:
+
+- All collections extend the `Iterable` trait.
+- The three major categories of collections are sequences, sets and maps
+- Scala has mutable and immutable versions of most collections
+- A Scala list is either empty, or it has a head and a tail which is again a list.
+- Sets are unordered collections.
+- \+ adds an element to an unordered collection; +: and :+ prepend or append to a sequence; ++ concatenates two collections; - and -- remove elements.
+- Use a `LinkedHashSet` to retain the insertion order or a `SortedSet` to iterate in sorted order.
+- Mapping, folding, and zipping are useful techniques for applying a function or operation to the elements of a collection
+
+#### 13.1 The Main Collections Traits
+
+An Iterable is any collection that can yield an Iterator with which you can access all elements in the collection:
+
+```scala
+val coll = ... // some Iterable
+val iter = coll.iterator
+while (iter.hasNext)
+	do something with iter.next()
+```
+
+A `Seq` is an ordered sequence of values, such as an array or list. An `IndexedSeq` allows fast random access through an integer index. For example, an `ArrayBuffer` is indexed but a linked list is not.
+
+A Set is an unordered collection of values. In a SortedSet, elements are always visited in sorted order.
+
+A Map is a set of (key, value) pairs. A SortedMap visits the entries as sorted by the keys.
+
+There are methods `toSeq, toSet, toMap`, and so on, as well as a `generic to[C]` method, that you can use to translate between collection types.
+
+```scala
+val coll = Seq(1, 1, 2, 3, 5, 8. 13)
+val set = coll.toSet
+val buffer = coll.to[ArrayBuffer]
+```
+
+#### 13.2 Mutable and Immutable Collections
+
+Scala supports both mutable and immutable collections. For example, there is a `scala.collection.mutable.Map` and a `scala.collection.immutable.Map`. Both have a common supertype scala.collection.Map (which, of course, contains no mutation operations).
+
+Moreover, the `scala` package and the `Predef` object, which are always imported, have type aliases `List, Set, and Map` that refer to the immutable traits. For example, `Predef.Map` is the same as `scala.collection.immutable.Map`.
+
+#### 13.3 Sequences
+
+![immutable seq](C:\Users\姜良泽\AppData\Roaming\Typora\typora-user-images\image-20210205082814754.png)
+
+A `Vector` is the immutable equivalent of an `ArrayBuffer`: an indexed sequence with fast random access. Vectors are implemented as trees where each node has up to 32 children. For a vector with one million elements, one needs four layers of nodes. Accessing an element in such a list will take 4 hops, whereas in a linked list it would take an average of 500,000.  
+
+A `Range` represents an integer sequence, such as 0,1,2,3,4,5,6,7,8,9 or 10,20,30. Of course a Range object doesn’t store all sequence values but only the start, end, and increment. You construct Range objects with the `to` and `until` methods.
+
+![image-20210205085459617](C:\Users\姜良泽\AppData\Roaming\Typora\typora-user-images\image-20210205085459617.png)
+
+#### 13.4 Lists
+
+In Scala, a list is either Nil (that is, empty) or an object with a head element and a tail that is again a list.
+
+```scala
+val digits = List(4,2)
+```
+
+The value of `digits.head` is 4, and `digits.tail` is List(2). Moreover, `digits.tail.head` is 2 and `digits.tail.tail` is `Nil`.
+
+The :: operator makes a new list from a given head and tail. For example,
+
+```scala
+9 :: List(4,2) // List(9, 4, 2)
+// also
+9 :: 4 :: 2 :: Nil
+// Note that :: is right-associative. With the :: operator, lists are constructed from
+// the end:
+9 :: (4 :: (2 :: Nil))
+```
+
+In Java or C++, one uses an iterator to traverse a linked list. You can do this in Scala as well, but it is often more natural to use recursion. For example, the following function computes the sum of all elements in a linked list of integers:
+
+```scala
+def sum(lst: List[Int]): Int = 
+	if (lst == Nil) 0 else lst.head + sum(lst.tail)
+// or use pattern matching
+def sum(lst: List[Int]): Int = lst match {
+    case Nil => 0
+    case h :: t => h + sum(t) // h is lst.head, t is lst.tail
+}
+// Note the :: operator in the second pattern. It “destructures” the list into head
+// and tail.
+
+// we can directly use the library
+List(9,4,2).sum
+```
+
+If you want to mutate list elements in place, you can use a ListBuffer, a data structure that is backed by a linked list with a reference to the last node. This makes it efficient to add or remove elements at either end of the list.
+
+However, adding or removing elements in the middle is not efficient.  Of course, removing multiple elements by their index positions is very inefficient in a linked list. Your best bet is to generate a new list with the result
+
+#### 13.5 Sets
+
+A set is a collection of distinct elements. Trying to add an existing element has no effect:
+
+```scala
+Set(2, 0, 1) + 1 // Set(2, 0, 1)
+```
+
+Unlike lists, sets do not retain the order in which elements are inserted. By default, sets are implemented as hash sets in which elements are organized by the value of the hashCode method.
+
+For example, if you iterate over `Set(1, 2, 3, 4, 5, 6)` the elements are visited in the order `5 1 6 2 3 4` You may wonder why sets don’t retain the element order. It turns out that you can find elements `much faster` if you allow sets to reorder their elements. Finding an element in a hash set is much faster than in an array or list.
+
+A linked hash set remembers the order in which elements were inserted. It keeps a linked list for this purpose.
+
+```scala
+val weekdays = scala.collection.mutable.LinkedHashSet("MO", "TU", "We", "Th", "Fr")
+// if you want to iterate over elements in sorted order, use a sorted set
+val numbers = scala.collection.mutable.SortedSet(1, 2, 3, 4, 5)
+```
+
+The contains method checks whether a set contains a given value. The subsetOf method checks whether all elements of a set are contained in another set.
+
+```scala
+val digits = Set(1, 7, 2, 9)
+digits contains 0 // False
+Set(1,2) subsetOf digits // True
+```
+
+The `union, intersect, and diff` methods carry out the usual set operations. If you prefer, you can write them as `|, &, and &~`. You can also write `union as ++ and difference as --`.
+
+#### 13.6 Operators for Adding or Removing Elements
+
+![image-20210205091516073](C:\Users\姜良泽\AppData\Roaming\Typora\typora-user-images\image-20210205091516073.png)
+
+Generally, `+` is used for adding an element to an unordered collection, while `+:` and `:+` add an element to the beginning or end of an ordered collection.
+
+![image-20210205091743409](C:\Users\姜良泽\AppData\Roaming\Typora\typora-user-images\image-20210205091743409.png)
+
+These operators return new collections (of the same type as the original ones) without modifying the original. Mutable collections have a += operator that mutates the left-hand side.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+
+#### 13.7 Common Methods
+
+![image-20210205092223355](C:\Users\姜良泽\AppData\Roaming\Typora\typora-user-images\image-20210205092223355.png)
+
+![image-20210205092719991](C:\Users\姜良泽\AppData\Roaming\Typora\typora-user-images\image-20210205092719991.png)
+
+![image-20210205092740030](C:\Users\姜良泽\AppData\Roaming\Typora\typora-user-images\image-20210205092740030.png)
+
+![image-20210205092759076](C:\Users\姜良泽\AppData\Roaming\Typora\typora-user-images\image-20210205092759076.png)
+
+#### 13.8 Mapping a Function
+
+You may want to transform all elements of a collection. The map method applies a function to a collection and yields a collection of the results.
+
+```scala
+val names = List("Peter", "Paul", "Mary")
+names.map(_.toUpperCase) // List("PETER", "PAUL", "MARY")
+// the same as
+for (n <- names) yield n.toUpperCase
+```
+
+If the function yields a collection instead of a single value, you may want to concatenate all results. In that case, use flatMap.
+
+```scala
+def ulcase(s: String) = Vector(s.toUpperCase(), s.toLowerCase())
+names.map(ulcase) // List(Vector("PETER", "Peter"), Vector("PAUL", "paul"), Vector("MARY", "mary"))
+names.flatMap(ulcase) //  List("PETER", "peter", "PAUL", "paul", "MARY", "mary")
+```
+
+Another example,
+
+```scala
+for (i <- 1 to 10) yield i * i
+// is translated to
+(1 to 10).map(i => i * i)
+
+for (i <- 1 to 10; j <- 1 to i) yield i * j
+// is translated to 
+(1 to 10).flatMap(i => (1 to i).map(j => i * j))
+```
+
+The `transform` method is the in-place equivalent of map. It applies to mutable collections, and replaces each element with the result of a function. For example, the following code changes all buffer elements to uppercase:
+
+```scala
+val buffer = ArrayBuffer("Peter", "Paul", "Mary")
+buffer.transform(_.toUppercase)
+```
+
+If you just want to apply a function for its side effect and don’t care about the function values, use foreach:
+
+```scala
+names.foreach(println)
+```
+
+The`collect` method works with partial functions—functions that may not be defined for all inputs. It yields a collection of all function values of the arguments on which it is defined. For example,
+
+```scala
+"-3+4".collect { case '+' => 1; case '-' => 1 } // Vector(-1, 1)
+```
+
+The `groupBy` method yields a map whose keys are the function values, and whose values are the collections of elements whose function value is the given key. For example,
+
+```scala
+val words = ...
+val map = words.groupBy(_.substring(0, 1).toUpper)
+```
+
+builds a map that maps "A" to all words starting with A, and so on.
+
+#### 13.9 Reducing, Folding and Scanning
+
+The `map` method applies a unary function to all elements of a collection. The methods that we discuss in this section combine elements with a binary function. The call `c.reduceLeft(op)` applies op to successive elements.
+
+```scala
+op(op(coll(0), coll(1)), coll(2))...
+
+List(1, 7, 2, 9).reduceLeft(_ - _)
+// (((1-7)-2)-9) = -17
+List(1, 7, 2, 9).reduceRight(_ - _)
+// 1-(7-(2-9)) = -13
+```
+
+Often, it is useful to start the computation with an initial element other than the initial element of a collection. The call coll.foldLeft(init)(op) computes
+
+```scala
+op(op(init, coll(0)), coll(1))...
+
+List(1, 7, 2, 9).foldLeft(0)(_ - _)
+0 - 1 - 7 - 2 - 9 = -19
+```
+
+The initial value and the operator are separate “curried” parameters so that Scala can use the type of the initial value for type inference in the operator. For example, in List(1, 7, 2, 9).foldLeft("")(_ + _), the initial value is a string, so the operator must be a function (String, Int) => String.
+
+You can also write the foldLeft operation with the `/:` operator, like this: `(0 /: List(1, 7, 2, 9))(_ - _) `The /: is supposed to remind you of the shape of the tree.
+
+There is a `foldRight` or `:\ `variant as well.
+
+Folding is sometimes attractive as a replacement for a loop. Suppose, for example, we want to count the frequencies of the letters in a string. One way is to visit each letter and update a mutable map.
+
+```scala
+val freq = scala.collection.mutable.Map[Char, Int]()
+for (c <- "Mississippi") freq(c) = freq.getOrElse(c, 0) + 1
+// Now freq is Map('i' -> 4, 'M' -> 1, 's' -> 4, 'p' -> 2)
+```
+
+Here is another way of thinking about this process. At each step, combine the frequency map and the newly encountered letter, yielding a new frequency map.
+
+```scala
+(Map[Char, Int]() /: "Mississippi") {
+    (m, c) => m + (c -> (m.getOrElse(c, 0) + 1))
+}
+```
+
+Finally, the scanLeft and scanRight methods combine folding and mapping. You get a collection of all intermediate results:
+
+```scala
+(1 to 10).scanLeft(0)(_ + _)
+// Vector(0, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55)
+```
+
+#### 13.10 Zipping
+
+ Sometimes, you have two collections, and you want to combine corresponding elements.
+
+```scala
+val prices = List(5.0, 20.0, 9.95)
+val quantities = List(10,2,1)
+prices zip quantities //  List[(Double, Int)] = List((5.0, 10), (20.0, 2), (9.95, 1))
+
+// Now it is easy to apply a function to each pair.
+(prices zip quantities) map { p => p._1 * p._2 }
+// List(50.0, 40.0, 9.95)
+// To compute the total price
+((prices zip quantities) map { p=> p._1 * p._2 }) sum
+```
+
+If one collection is shorter than the other, the result has as many pairs as the shorter collection.
+
+The zipAll method lets you specify defaults for the shorter list:
+
+```scala
+List(5.0, 20.0, 9.95).zipAll(List(10, 2), 0.0, 1)
+// List((5.0, 10), (20.0, 2), (9.95, 1))
+```
+
+The zipWithIndex method returns a list of pairs where the second component is the index of each element
+
+```scala
+"Scala".zipWithIndex
+// Vector(('S', 0), ('c', 1), ('a', 2), ('l', 3), ('a', 4))
+```
+
+#### 13.11 Iterators
+
+You can obtain an iterator from a collection with the iterator method. This isn’t as common as in Java or C++ because you can usually get what you need more easily with one of the methods from the preceding sections. 
+
+However, iterators are useful for collections that are expensive to construct fully. For example, Source.fromFile yields an iterator because it might not be efficient to read an entire file into memory. There are a few Iterable methods that yield an iterator, such as grouped or sliding.
+
+When you have an iterator, you can iterate over the elements with the next and hasNext methods.
+
+```scala
+while (iter.hasNext)
+	do something with iter.next()
+
+for (elem <- iter)
+	do something with elem
+```
+
+Sometimes, you want to be able to look at the next element before deciding whether to consume it. In that case, use the buffered method to turn an Iterator into a BufferedIterator. The head method yields the next element without advancing the iterator.
+
+```scala
+val iter = scala.io.Source.fromFile(filename).buffered
+while (iter.hasNext && iter.head.isWhitespece) iter.next
+// Now iter points to the first non-whitespace character
+```
+
+After calling a method such as map, filter, count, sum, or even length, the iterator is at the end of the collection, and you can’t use it again. With other methods, such as find or take, the iterator is past the found element or the taken ones.
+
+#### 13.12 Streams
+
+In the preceding sections, you saw that an iterator is a “lazy” alternative to a collection.
+
+However, iterators are fragile. Each call to next mutates the iterator. Streams offer an immutable alternative. A stream is an immutable list in which the tail is computed lazily—that is, only when you ask for it.
+
+For example, 
+
+```scala
+def numsFrom(n: BigInt): Stream[BigInt] = n #:: numsFrom(n + 1)
+```
+
+The `#::` operator is like the `::` operator for lists, but it constructs a stream.
+
+```scala
+val tenOrMore = numsFrom(10) // Stream(10, ?)
+tenOrMore.tail.tail.tail // Stream(13, ?)
+
+// Stream methods are executed lazily. For example, 
+val squares = numsFrom(1).map(x => x * x) // Stream(1, ?)
+// we have to call squares.tail to force evaluation of the next entry
+```
+
+If you want to get more than one answer, you can invoke take followed by force, which forces evaluation of all values. For example,
+
+```scala
+squares.take(5).force // Stream(1, 4, 9, 16, 25)
+squares.force // No! OutOfMemoryError
+```
+
+You can construct a stream from an iterator. A stream caches the visited lines so you can revisit them
+
+```scala
+val words = Source.fromFile("/usr/share/dict/words").getLines.toStream
+words // Stream(A, ?)
+words(5) // Aachen
+words // Stream(A, A's, AOL, AOL's, Aachen, ?)
+```
+
+#### 13.13 Lazy Views
+
+In the preceding section, you saw that stream methods are computed lazily, delivering results only when they are needed. You can get a similar effect with other collections by applying the `view` method. This method yields a collection on which methods are applied lazily.
+
+```scala
+val palindromicSquares = (1 to 1000000).view
+	.map(x => x * x).filter(x => x.toString == x.toString.reverse)
+```
+
+yields a collection that is unevaluated. (Unlike a stream, not even the first element is evaluated.) When you call
+
+```scala
+palindromicSquares.take(10).mkString(",")
+```
+
+then enough squares are generated until ten palindromes have been found, and then the computation stops. Unlike streams, views do not cache any values. If you call palindromicSquares.take(10).mkString(",") again, the computation starts over.
+
+- The apply method forces evaluation of the entire view. Instead of calling lazyView(i), call `lazyView.take(i).last`.
+- As with streams, use the `force` method to force evaluation of a lazy view. You get back a collection of the same type as the original.
+
+When you obtain a view into a slice of a mutable collection, any mutations affect the original collection.
+
+```scala
+ArrayBuffer buffer = ...
+buffer.view(10, 20).transform(x => 0)
+// clears the given slice and leaves the other elements unchanged.
+```
+
+#### 13.14 Interoperability with Java Collections
+
+Check the book...
+
+#### 13.15 Parallel Collections
+
+ Scala offers a particularly attractive solution for manipulating large collections. Such tasks often parallelize naturally. For example, to compute the sum of all elements, multiple threads can concurrently compute the sums of different sections; in the end, these partial results are summed up. Of course it is troublesome to schedule these concurrent activities—but with Scala, you don’t have to. If coll is a large collection, then
+
+```scala
+coll.par.sum // compute the sum concurrently
+```
+
+The `par` method produces a `parallel implementation` of the collection. That implementation parallelizes the collection methods whenever possible. For example,
+
+```scala
+coll.par.count(_ % 2 == 0)
+```
+
+counts the even numbers in coll by evaluating the predicate on subcollections in parallel and combining the results. You can parallelize a for loop by applying .par to the collection over which you iterate, like this:
+
+```scala
+for (i <- (0 until 100000).par) print(s" $i")
+// the numbers are printed in the order they are produced by the threads
+// working on the task.
+```
+
+If parallel computations mutate shared variables, the result is unpredictable. For example, do not update a shared counter:
+
+```scala
+var count = 0
+for (c <- coll.par) { if (c % 2 == 0) count += 1} // Error!
+```
+
+The parallel collections returned by the par method belong to types that extend the ParSeq, ParSet, or ParMap traits. These are not subtypes of Seq, Set, or Map, and you cannot pass a parallel collection to a method that expects a sequential collection.
+
+You can convert a parallel collection back to a sequential one with the seq method.
+
+```scala
+val result = coll.par.filter(p).seq
+```
+
+#### 13.16 Exercise Tips
+
+1. ```scala
+   // https://github.com/BasileDuPlessis/scala-for-the-impatient/blob/master/src/main/scala/com/basile/scala/ch13/Ex01.scala
+   import scala.collection.mutable.Map
+   import scala.collection.mutable.SortedSet
+   object Ex1 extends App {
+       def indexes(s: String) = {
+           s.indices.foldLeft( Map[Char, SortedSet[Int]]() ) {
+               (m, i) => m += ( s(i) -> (m.getOrElse(s(i), SortedSet[Int]()) += i))
+           }
+       }
+   }
+   ```
+
+2. ```scala
+   // the only difference comes to the operator
+   import scala.collection.immutable.SortedMap
+   import scala.collection.immutable.SortedSet
+   object Ex2 extends App {
+       def indexes(s: String) = {
+           s.indices.foldLeft( SortedMap[Char, Set[Int]]() ) {
+               (m, i) => m + ( s(i) -> (m.getOrElse(s(i), SortedSet[Int]()) + i))
+           }
+       }
+   }
+   ```
+
+3. ```scala
+   def mkString[T](s: Seq[T], seq: String = ", "): String = s.map(_.toString) reduceLeft(_.toString + seq + _.toString)
+   ```
+
+### Chapter14 Pattern Matching and Case Classes
+
+Pattern matching is a powerful mechanism that has a number of applications:  switch statements, type inquiry, and “destructuring” (getting at the parts of complex expressions). Case classes are optimized to work with pattern matching.
+
+#### 14.1 A Better Switch
+
+The equivalent of the C-style switch statement in Scala:
+
+```scala
+var sign = ...
+val ch: Char = ...
+ch match {
+    case '+' => sign = 1
+    case '-' => sign =-1
+    case _ => sign =0 // catch-all pattern
+}
+
+// can be written as
+sign = ch match {
+    case '+' => 1
+    case '-' => -1
+    case _ => 0
+}
+
+// use | to separate multiple alternatives
+prefix match {
+    case "0" | "0x" | "0X" =>...
+    ...
+}
+
+// use match statement with any types
+color match {
+    case Color.RED => ...
+    case Color.BLACK => ...
+    ...
+}
+```
+
+If no pattern matches, a MatchError is thrown.
+
+#### 14.2 Guards
+
+Suppose we want to extend our example to match all digits. In a C-style switch statement, you would simply add multiple case labels, for example case '0': case '1': ... case '9':. (Except that, of course, you can’t use ... but must write out all ten cases explicitly.) In Scala, you add a `guard clause` to a pattern:
+
+```scala
+ch match {
+    case _ if Character.isDigit(ch) => digit = Character.digit(ch, 10)
+    case '+' => sign = 1
+    case '-' => sign = -1
+    case _ => sign =0
+}
+```
+
+The guard clause can be any Boolean condition.
+
+#### 14.3 Variables in Patterns
+
+If the case keyword is followed by a variable name, then the match expression is assigned to that variable.
+
+```scala
+str(i) match {
+    case '+' => sign = 1
+    case '-' => sign = -1
+    case ch => digit = Character.digit(ch, 10)
+}
+
+// use the variable name in a guard
+str(i) match {
+    case ch if Character.isDigit(ch) => digit = Character.digit(ch, 10)
+    ...
+}
+```
+
+#### 14.4 Type Patterns
+
+You can match on the type of an expression:
+
+```scala
+obj match {
+    case x: Int => x
+    case s: String => Integer.parseInt(s)
+    case _: BigInt => Int.MaxValue
+    case _ => 0
+}
+```
+
+In Scala, this form is preferred to using the `isInstanceOf` operator. Note the variable names in the patterns. In the first pattern, the match is bound to x as an Int, and in the second pattern, it is bound to s as a String. No `asInstanceOf` casts are needed!
+
+#### 14.5 Matching Arrays, Lists and Tuples
+
+To match an array against its contents, use Array expressions in the patterns, like this:
+
+```scala
+arr match {
+    case Array(0) => "0"
+    case Array(x, y) => s"$x, $y"
+    case Array(0, _*) => "0 ..."
+    case _ => "something else"
+}
+```
+
+The first pattern matches the array containing 0. The second pattern matches any array with two elements, and it binds the variables x and y to the elements. The third pattern matches any array starting with zero.
+
+If you want to bind a variable argument match _* to a variable, use the @ notation like this:
+
+```scala
+case Array(x, rest @ _*) => rest.min
+```
+
+You can match lists in the same way, with List expressions. Alternatively, you can use the :: operator:
+
+```scala
+lst match {
+    case 0 :: Nil => "0"
+    case x :: y :: Nil => s"$x, $y"
+    case 0 :: tail => "0 ..."
+    case _ => "something else"
+}
+```
+
+With tuples, use the tuple notation in the pattern:
+
+```scala
+pair match {
+    case (0, _) => "0 ..."
+    case (y, 0) => s"$y 0"
+    case _ => "neither is 0"
+}
+```
+
+Again, note how the variables are bound to parts of the list or tuple. Since these bindings give you easy access to parts of a complex structure, this operation is called destructuring.
+
+#### 14.6 Extractors
+
+In the preceding section, you have seen how patterns can match arrays, lists, and tuples. These capabilities are provided by extractors—objects with an `unapply` or `unapplySeq` method that extract values from an object. The unapply method is provided to extract a fixed number of objects, while unapplySeq extracts a sequence whose length can vary. For example, consider the expression
+
+```scala
+arr match {
+    case Array(x, 0) => x
+    case Array(x, rest @ _*) => rest.min
+    ...
+}
+```
+
+The Array companion object is an extractor—it defines an unapplySeq method. That method is called with the expression that is being matched, not with what appear to be the parameters in the pattern.  In the first case, the match succeeds if the array has length 2 and the second element is zero. In that case, the initial array element is assigned to x.
+
+#### 14.7 Patterns in Variable Declarations
+
+In the preceding sections, you have seen how patterns can contain variables. You can use these patterns inside variable declarations. For example,
+
+```scala
+val (x, y) = (1, 2) // simultaneously define x as 1 and y as 2
+```
+
+That is useful for functions that return a pair, for example:
+
+```scala
+val (q, r) = BigInt(10) /% 3 // The /% method returns a pair containing the quotient and the remainder, which are captured in the variables q and r
+```
+
+#### 14.8 Patterns in `for ` Expressions
+
+Traverse a map:
+
+```scala
+for ((k, v) <- System.getProperties())
+	println(s"$k -> $v)
+```
+
+In a for expression, match failures are silently ignored. For example, the following loop prints all keys with empty value, skipping over all others:
+
+```scala
+for ((k, "") <- System.getProperties())
+	println(k)
+```
+
+You can also use a guard. Note that the `if` goes after the `<-` symbol:
+
+```scala
+for ((k,v) <- System.getProperties() if v == "")
+	println(k)
+```
+
+#### 14.9 Case Classes
+
+Case classes are a special kind of classes that are optimized for use in pattern matching. In this example, we have two case classes that extend a regular (noncase) class:
+
+```scala
+abstract class Amount
+case class Dollar(value: Double) extends Amount
+case class Currency(value: Double, unit: String) extends Amount
+```
+
+You can also have case objects for singletons:
+
+```scala
+case object Nothing extends Amount
+```
+
+When we have an object of type Amount, we can use pattern matching to match the amount type and bind the property values to variables:
+
+```scala
+amt match {
+    case Dollar(v) => s"$$$v"
+    case Currency(_, u) => s"Oh noes, I got $u"
+    case Nothing => ""
+}
+```
+
+#### 14.10 The `copy` Method and Named Parameters
+
+The copy method of a case class makes a new object with the same values as an existing one. For example,
+
+```scala
+val amt = Currency(29.95, "EUR")
+val price = amt.copy()
+```
+
+By itself, that isn’t very useful—after all, a Currency object is immutable, and one can just share the object reference. However, you can use named parameters to modify some of the properties:
+
+```scala
+val price = amt.copy(value = 19.95) // Currency(19.95, "EUR")
+val price = amt.copy(unit = "CHF") // Currency(29.95, "EUR")
+```
 
 
 
+#### 14.11 Infix Notation in `case` Clauses
 
+#### 14.12 Matching Nested Structures
 
+#### 14.13 Are Case Classes Evil
 
+#### 14.14 Sealed Classes
+
+#### 14.15 Simulating Enumerations
+
+#### 14.16 The `Option` Type
+
+#### 14.17 Partial Functions
+
+#### 14.18 Exercise Tips
 
